@@ -49,13 +49,16 @@ class File:
     name: str
     pages: Optional[int] = None
     summary: Optional[str] = None
-    metadata: Optional[str] = None
+    metadata: Optional[Any] = None
     expires_at: Optional[str] = None
     created_at: str = field(
         default_factory=lambda: datetime.now(datetime.timezone.utc).isoformat()
     )
     storage_location: Optional[str] = None
     company_id: Optional[int] = None
+    size: Optional[str] = None
+    deleted: Optional[bool] = None
+    user_id: Optional[int] = None
 
 
 @dataclass
