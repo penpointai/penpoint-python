@@ -1,11 +1,12 @@
 """Main client classes for the Penpoint API."""
 
 import json
+import logging
 import time
 from typing import Optional, Dict, Any, Union, BinaryIO
-from urllib.parse import urljoin
-
 import requests
+
+logger = logging.getLogger("penpoint")
 
 from .exceptions import (
     PenpointError,
@@ -80,8 +81,18 @@ class BaseClient:
         files: Optional[Dict[str, Any]] = None,
     ) -> requests.Response:
         """Make an HTTP request with retry logic."""
-        url = urljoin(self.base_url, endpoint)
+        url = f"{self.base_url}{endpoint}"
         request_headers = self._get_headers(headers)
+
+        logger.debug(
+            "%s %s params=%s json=%s data_keys=%s files_keys=%s",
+            method,
+            url,
+            params,
+            json_data,
+            list(data.keys()) if isinstance(data, dict) else type(data).__name__,
+            list(files.keys()) if files else None,
+        )
 
         for attempt in range(self.max_retries + 1):
             try:
@@ -96,9 +107,16 @@ class BaseClient:
                     timeout=self.timeout,
                 )
 
-                # Handle API errors
+                logger.debug(
+                    "%s %s -> %s %.500s",
+                    method,
+                    url,
+                    response.status_code,
+                    response.text,
+                )
+
                 if response.status_code >= 400:
-                    self._handle_error_response(response)
+                    self._handle_error_response(response, method, url)
 
                 return response
 
@@ -107,7 +125,7 @@ class BaseClient:
                     raise PenpointTimeoutError(
                         f"Request timed out after {self.timeout} seconds"
                     )
-                time.sleep(2**attempt)  # Exponential backoff
+                time.sleep(2**attempt)
 
             except requests.exceptions.ConnectionError as e:
                 if attempt == self.max_retries:
@@ -119,18 +137,36 @@ class BaseClient:
 
         raise PenpointError("Max retries exceeded")
 
-    def _handle_error_response(self, response: requests.Response) -> None:
+    def _handle_error_response(
+        self,
+        response: requests.Response,
+        method: str = "",
+        url: str = "",
+    ) -> None:
         """Handle error responses from the API."""
         try:
             error_data = response.json()
-            message = error_data.get("message", "Unknown error")
+            message = (
+                error_data.get("message")
+                or error_data.get("error")
+                or json.dumps(error_data)
+            )
         except (ValueError, KeyError):
+            error_data = {}
             message = response.text or "Unknown error"
+
+        logger.error(
+            "%s %s returned %s: %s",
+            method,
+            url,
+            response.status_code,
+            message,
+        )
 
         raise PenpointAPIError(
             message=message,
             status_code=response.status_code,
-            response_data=error_data if "error_data" in locals() else {},
+            response_data=error_data,
         )
 
 
@@ -183,7 +219,7 @@ class AsyncPenpointClient(BaseClient):
                 "aiohttp is required for async operations. Install with: pip install aiohttp"
             )
 
-        url = urljoin(self.base_url, endpoint)
+        url = f"{self.base_url}{endpoint}"
         request_headers = self._get_headers(headers)
 
         async with aiohttp.ClientSession() as session:

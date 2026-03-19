@@ -1,8 +1,27 @@
 """Resource classes for different API endpoints."""
 
 import json
+import mimetypes
+import os
 from typing import Optional, Dict, Any, Union, BinaryIO
 from urllib.parse import urlencode
+
+MIME_OVERRIDES = {
+    ".md": "text/markdown",
+    ".markdown": "text/markdown",
+    ".csv": "text/csv",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    ".m4a": "audio/mp4",
+}
+
+
+def _guess_content_type(filename: str) -> str:
+    ext = os.path.splitext(filename)[1].lower()
+    if ext in MIME_OVERRIDES:
+        return MIME_OVERRIDES[ext]
+    return mimetypes.guess_type(filename)[0] or "application/octet-stream"
 
 from .models import (
     File,
@@ -72,8 +91,8 @@ class FilesResource(BaseResource):
         if not filename:
             raise PenpointValidationError("Filename is required")
 
-        # Prepare form data
-        files_data = {"file": (filename, file, "application/octet-stream")}
+        content_type = _guess_content_type(filename)
+        files_data = {"file": (filename, file, content_type)}
         data = {}
 
         if summary:
@@ -104,7 +123,10 @@ class FilesResource(BaseResource):
             data["expirationDate"] = expiration_date
 
         response = self.client.put(f"/files/{file_id}", json_data=data)
-        return File(**response.json())
+        result = response.json()
+        if isinstance(result, list):
+            result = result[0]
+        return File(**result)
 
     def delete(self, file_id: int) -> bool:
         """
