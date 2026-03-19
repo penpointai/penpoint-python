@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="penpoint",
-    version="0.1.0",
+    version="0.3.0",
     author="Penpoint",
     author_email="support@penpoint.ai",
     description="Official Python client library for the Penpoint API",
