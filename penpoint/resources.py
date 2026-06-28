@@ -23,6 +23,7 @@ def _guess_content_type(filename: str) -> str:
         return MIME_OVERRIDES[ext]
     return mimetypes.guess_type(filename)[0] or "application/octet-stream"
 
+
 from .models import (
     File,
     FileList,
@@ -245,4 +246,4 @@ class DiscreteReferencesResource(BaseResource):
             data["markupColor"] = markup_color
 
         response = self.client.post(endpoint, json_data=data)
-        return DiscreteReferenceResponse(**response.json())
+        return DiscreteReferenceResponse.from_dict(response.json())

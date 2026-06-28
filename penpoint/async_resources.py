@@ -220,4 +220,4 @@ class AsyncDiscreteReferencesResource(AsyncBaseResource):
             data["markupColor"] = markup_color
 
         response_data = await self.client.post(endpoint, json_data=data)
-        return DiscreteReferenceResponse(**response_data)
+        return DiscreteReferenceResponse.from_dict(response_data)

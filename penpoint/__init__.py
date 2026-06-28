@@ -12,9 +12,12 @@ from .models import (
     DiscreteReferenceResponse,
     ReferencePart,
     ReferenceMetadata,
+    CanonicalReference,
+    ReferenceLocator,
+    PENPOINT_REF_SCHEMA_VERSION,
 )
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 __all__ = [
     "PenpointClient",
     "AsyncPenpointClient",
@@ -26,4 +29,7 @@ __all__ = [
     "DiscreteReferenceResponse",
     "ReferencePart",
     "ReferenceMetadata",
+    "CanonicalReference",
+    "ReferenceLocator",
+    "PENPOINT_REF_SCHEMA_VERSION",
 ]
