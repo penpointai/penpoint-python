@@ -17,7 +17,13 @@ from .models import (
     PENPOINT_REF_SCHEMA_VERSION,
 )
 
-__version__ = "0.5.0"
+# Version is dynamic (setuptools_scm derives it from the git tag at build time
+# and writes penpoint/_version.py). Read it from there; fall back when running
+# from a source checkout that hasn't been built/tagged.
+try:
+    from ._version import version as __version__
+except ImportError:  # pragma: no cover - source checkout without a build
+    __version__ = "0.0.0+unknown"
 __all__ = [
     "PenpointClient",
     "AsyncPenpointClient",
